@@ -45,7 +45,7 @@ local function initializeAFK()
         -- Set waktu untuk AFK pertama (5-10 menit dari sekarang)
         local initialDelay = math.random(300, 600) -- 5-10 menit dalam detik
         nextAFKTime = tick() + initialDelay
-        print("AFK mode enabled. Next AFK in " .. math.floor(initialDelay/60) .. " minutes")
+        -- AFK initialized silently
     end
 end
 
@@ -60,7 +60,7 @@ local function checkAFKMode()
         isAFK = true
         afkStartTime = currentTime
         afkDuration = math.random(60, 180) -- 1-3 menit dalam detik
-        print("🛌 Going AFK for " .. math.floor(afkDuration/60) .. " minutes...")
+        -- Going AFK silently
         return true
     end
     
@@ -71,7 +71,7 @@ local function checkAFKMode()
         -- Set waktu AFK berikutnya (5-10 menit lagi)
         local nextDelay = math.random(300, 600)
         nextAFKTime = currentTime + nextDelay
-        print("✅ Back from AFK! Next AFK in " .. math.floor(nextDelay/60) .. " minutes")
+        -- Back from AFK silently
         return false
     end
     
@@ -122,7 +122,7 @@ local function performAutoShake()
     if not button or not button.Visible then return end
     
     isShaking = true
-    print("[AUTO SHAKE] Starting natural shake with random timing...")
+    -- Auto shake started
     
     task.spawn(function()
         while shakeUI.Parent and button.Visible and autoShake do
@@ -149,13 +149,13 @@ local function performAutoShake()
                 VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
             end
             
-            print("[AUTO SHAKE] Clicked with " .. string.format("%.2f", randomClickTiming) .. "s delay, method: " .. (useGuiService and "GuiService" or "Direct"))
+            -- Shake click executed
             
             -- Wait dengan timing random sebelum klik berikutnya
             task.wait(randomClickTiming)
         end
         isShaking = false
-        print("[AUTO SHAKE] Shake session ended")
+        -- Shake session ended
     end)
 end
 
@@ -185,14 +185,14 @@ local function performAlwaysCatch()
         status = "FAIL (" .. completionRate .. "%)"
     end
     
-    print("[ALWAYS CATCH] Firing reelfinished - " .. status .. " (Roll: " .. successChance .. "/100)")
+    -- Always catch executed
     ReplicatedStorage:WaitForChild("events"):WaitForChild("reelfinished"):FireServer(completionRate, isSpecialCatch)
     
     -- Setelah catch, tunggu delay random 1-4 detik lalu kembali ke auto cast
     if autoCast and enableLoop then
         task.spawn(function()
             local loopDelay = math.random(100, 400) / 100 -- 1.00 sampai 4.00 detik
-            print("[ALWAYS CATCH] Waiting " .. string.format("%.2f", loopDelay) .. "s before next auto cast...")
+            -- Waiting for next cast
             task.wait(loopDelay)
             
             -- Cek AFK mode sebelum melanjutkan
@@ -215,44 +215,34 @@ local ControlSection = MainTab:NewSection("⚙️ Toggle Controls")
 -- Auto Cast Toggle
 ControlSection:NewToggle("Enable Auto Cast", "Aktifkan auto cast dengan timing random natural", function(state)
     autoCast = state
-    if state then
-        print("Auto Cast: ON - Natural timing")
-    else
-        print("Auto Cast: OFF")
-    end
+    -- Toggle state changed silently
 end)
 
 -- Cast Delay Slider
 ControlSection:NewSlider("Cast Delay", "Delay antar cast dalam detik", 5, 1, function(value)
     autoCastDelay = value
-    print("Cast Delay: " .. value .. " detik")
+    -- Cast delay updated silently
 end)
 
 -- Auto Shake Toggle  
 ControlSection:NewToggle("Enable Auto Shake", "Aktifkan auto shake dengan timing anti-detection", function(state)
     autoShake = state
-    if state then
-        print("Auto Shake: ON - Anti-detection mode")
-    else
-        print("Auto Shake: OFF")
+    if not state then
         isShaking = false
     end
+    -- Toggle state changed silently
 end)
 
 -- Always Catch Toggle
 ControlSection:NewToggle("Enable Always Catch", "85% success rate dengan natural fail pattern", function(state)
     alwaysCatch = state
-    if state then
-        print("Always Catch: ON - 85% success, 15% natural fail")
-    else
-        print("Always Catch: OFF")
-    end
+    -- Toggle state changed silently
 end)
 
 -- Loop Toggle
 ControlSection:NewToggle("Enable Loop", "Otomatis repeat fishing cycle", function(state)
     enableLoop = state
-    print("Loop mode: " .. (enableLoop and "Enabled" or "Disabled"))
+    -- Loop mode toggled silently
 end)
 
 -- AFK Toggle
@@ -260,11 +250,10 @@ ControlSection:NewToggle("Enable AFK Mode", "Simulasi break realistis", function
     enableAFK = state
     if state then
         initializeAFK()
-        print("AFK mode: Enabled")
     else
         isAFK = false
-        print("AFK mode: Disabled")
     end
+    -- AFK mode toggled silently
 end)
 
 -- ===== SEMUA INFORMASI DI BAWAH =====
@@ -345,7 +334,7 @@ RunService.Heartbeat:Connect(function()
                             VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
                         end
                         
-                        print("[AUTO SHAKE] Clicked with " .. string.format("%.2f", shakeClickDelay) .. "s next delay, method: " .. (useGuiService and "GuiService" or "Direct"))
+                        -- Shake click executed
                         lastShakeTime = currentTime
                     end
                 end
@@ -422,15 +411,15 @@ LocalPlayer.CharacterAdded:Connect(onCharacterAdded)
 
 PlayerGui.ChildAdded:Connect(function(gui)
     if gui.Name == "shakeui" and autoShake and not checkAFKMode() then
-        print("[AUTO SHAKE] ShakeUI detected! Intelligent Heartbeat monitoring activated")
+        -- ShakeUI detected
         -- Heartbeat sekarang handle autoshake, ini hanya untuk log
     elseif gui.Name == "reel" and alwaysCatch and not checkAFKMode() then
-        print("[ALWAYS CATCH] REEL GUI DETECTED! Starting auto-completion...")
+        -- Reel GUI detected
         
         -- Natural always catch: random delay, random perfect catch (mengikuti simple.lua)
         task.spawn(function()
             local minigameDelay = math.random(50, 150) / 100 -- 0.5-1.5 detik
-            print("[ALWAYS CATCH] Waiting " .. minigameDelay .. " seconds for natural timing...")
+            -- Waiting for natural timing before catch
             task.wait(minigameDelay)
             
             -- Complete minigame if GUI still exists
@@ -440,10 +429,10 @@ PlayerGui.ChildAdded:Connect(function(gui)
                 -- Try to hide GUI (optional, mengikuti simple.lua)
                 pcall(function() 
                     gui.Enabled = false 
-                    print("[ALWAYS CATCH] GUI hidden successfully")
+                    -- GUI hidden
                 end)
             else
-                print("[ALWAYS CATCH] GUI disappeared before completion or alwaysCatch disabled")
+                -- GUI not available
             end
         end)
     end
@@ -455,7 +444,7 @@ local function CheckFunc(func)
 end
 
 if CheckFunc(hookmetamethod) then
-    print("[ALWAYS CATCH] Setting up hookmetamethod...")
+    -- Setting up hooks
     local hookSuccess, hookError = pcall(function()
         local old; old = hookmetamethod(game, "__namecall", function(self, ...)
             local method, args = getnamecallmethod(), {...}
@@ -487,7 +476,7 @@ if CheckFunc(hookmetamethod) then
                 args[1] = completionRate
                 args[2] = isSpecialCatch
                 
-                print("[ALWAYS CATCH] Hooked reelfinished - " .. status .. " (Roll: " .. successChance .. "/100)")
+                -- Hook executed
                 return old(self, unpack(args))
             end
             return old(self, ...)
@@ -495,17 +484,13 @@ if CheckFunc(hookmetamethod) then
     end)
     
     if hookSuccess then
-        print("[ALWAYS CATCH] Hook setup successfully!")
+        -- Hooks ready
     else
-        warn("[ALWAYS CATCH] Failed to setup hook: " .. tostring(hookError))
+        -- Hook setup failed
     end
 else
-    warn("[ALWAYS CATCH] hookmetamethod is not available in this executor")
-    print("[ALWAYS CATCH] Falling back to event-based system...")
+    -- Hookmetamethod not available, using fallback
 end
 
-print("Auto Fisch Script Loaded!")
-print("Features:")
-print("- Auto Cast Mode Legit dengan timing random 1-3 detik")
-print("- Auto Shake Mode Natural: timing 0.3-2.8s, dual method, anti-detection")
-print("- Always Catch Mode: 85% success, 15% natural fail, 25% special catch")
+-- Script loaded silently
+-- Features available: Auto Cast, Auto Shake, Always Catch with natural anti-detection
