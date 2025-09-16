@@ -314,7 +314,8 @@ local lastShakeTime = 0
 local shakeClickDelay = 0 -- Dynamic delay untuk next click
 
 RunService.Heartbeat:Connect(function()
-    if autoShake then
+    -- Cek AFK mode untuk autoshake juga
+    if autoShake and not checkAFKMode() then
         local currentTime = tick()
         local shakeui = FindChild(PlayerGui, "shakeui")
         
@@ -420,10 +421,10 @@ end
 LocalPlayer.CharacterAdded:Connect(onCharacterAdded)
 
 PlayerGui.ChildAdded:Connect(function(gui)
-    if gui.Name == "shakeui" and autoShake then
+    if gui.Name == "shakeui" and autoShake and not checkAFKMode() then
         print("[AUTO SHAKE] ShakeUI detected! Intelligent Heartbeat monitoring activated")
         -- Heartbeat sekarang handle autoshake, ini hanya untuk log
-    elseif gui.Name == "reel" and alwaysCatch then
+    elseif gui.Name == "reel" and alwaysCatch and not checkAFKMode() then
         print("[ALWAYS CATCH] REEL GUI DETECTED! Starting auto-completion...")
         
         -- Natural always catch: random delay, random perfect catch (mengikuti simple.lua)
