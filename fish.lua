@@ -159,20 +159,21 @@ local function performAutoShake()
     end)
 end
 
--- Always Catch Function dengan random percentage
+-- Always Catch Function dengan Logic yang Benar
 local function performAlwaysCatch()
     if not alwaysCatch then return end
     
-    -- Random completion rate: 80-95% (tidak selalu perfect)
-    local completionRate = math.random(80, 95)
+    -- arg1 = 100 SELALU (agar ikan berhasil ditangkap)
+    local completionRate = 100
     
-    -- Random success rate: 75% true, 25% false (lebih natural seperti manusia)
+    -- arg2 = random antara true/false untuk jenis tangkapan
+    -- true = tangkapan luar biasa, false = tangkapan normal
     local randomChance = math.random(1, 100)
-    local catchSuccess = randomChance <= 75 -- 75% chance untuk berhasil
+    local isSpecialCatch = randomChance <= 25 -- 25% chance untuk tangkapan luar biasa
     
-    -- arg1 = completion rate, arg2 = random success/fail
-    print("[ALWAYS CATCH] Firing reelfinished with rate: " .. completionRate .. "%, success: " .. tostring(catchSuccess) .. " (" .. randomChance .. "%)")
-    ReplicatedStorage:WaitForChild("events"):WaitForChild("reelfinished"):FireServer(completionRate, catchSuccess)
+    local catchType = isSpecialCatch and "LUAR BIASA" or "NORMAL"
+    print("[ALWAYS CATCH] Firing reelfinished - Rate: 100% (SUCCESS), Type: " .. catchType .. " (" .. randomChance .. "%)")
+    ReplicatedStorage:WaitForChild("events"):WaitForChild("reelfinished"):FireServer(completionRate, isSpecialCatch)
     
     -- Setelah catch, tunggu delay random 1-4 detik lalu kembali ke auto cast
     if autoCast and enableLoop then
@@ -274,11 +275,11 @@ AutoShakeInfo:NewLabel("• No predictable patterns")
 
 local AlwaysCatchInfo = InfoTab:NewSection("🎣 Always Catch Info")
 
-AlwaysCatchInfo:NewLabel("Always Catch Mode Natural:")
-AlwaysCatchInfo:NewLabel("• Success rate: 75% true, 25% false")
-AlwaysCatchInfo:NewLabel("• Completion rate: 80-95% (random)")
+AlwaysCatchInfo:NewLabel("Always Catch Mode (100% Success):")
+AlwaysCatchInfo:NewLabel("• Completion rate: 100% (always catch fish)")
+AlwaysCatchInfo:NewLabel("• Special catch: 25% luar biasa, 75% normal")
 AlwaysCatchInfo:NewLabel("• Uses hookmetamethod for reliability")
-AlwaysCatchInfo:NewLabel("• Human-like fishing simulation")
+AlwaysCatchInfo:NewLabel("• Natural catch type distribution")
 AlwaysCatchInfo:NewLabel("• Fallback to event system if needed")
 
 local LoopAFKInfo = InfoTab:NewSection("⚡ Loop & AFK Info")
@@ -294,8 +295,54 @@ LoopAFKInfo:NewLabel("• Active time: 5-10 minutes")
 LoopAFKInfo:NewLabel("• Break time: 1-3 minutes")
 LoopAFKInfo:NewLabel("• Realistic player simulation")
 
--- Auto Shake sudah dihandle oleh performAutoShake() function
--- Heartbeat implementation dihapus untuk menghindari spam clicking
+-- Auto Shake dengan Intelligent Heartbeat (tidak spam, ada delay)
+local lastShakeTime = 0
+local shakeClickDelay = 0 -- Dynamic delay untuk next click
+
+RunService.Heartbeat:Connect(function()
+    if autoShake then
+        local currentTime = tick()
+        local shakeui = FindChild(PlayerGui, "shakeui")
+        
+        if shakeui then
+            local safezone = FindChild(shakeui, "safezone")
+            if safezone then
+                local button = FindChild(safezone, "button")
+                if button and button.Visible then
+                    -- Cek apakah sudah waktunya untuk click berikutnya
+                    if currentTime - lastShakeTime >= shakeClickDelay then
+                        -- Generate random timing untuk click berikutnya
+                        local minDelay = math.random(30, 80) / 100  -- 0.3-0.8 detik (reaction time)
+                        local maxDelay = math.random(150, 280) / 100 -- 1.5-2.8 detik (thinking time)
+                        shakeClickDelay = math.random() < 0.7 and minDelay or maxDelay -- 70% cepat, 30% lambat
+                        
+                        -- Random method selection
+                        local useGuiService = math.random() < 0.6 -- 60% GuiService, 40% Direct
+                        
+                        if useGuiService then
+                            GuiService.SelectedObject = button
+                            if GuiService.SelectedObject == button then
+                                VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
+                                VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
+                            end
+                        else
+                            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
+                            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
+                        end
+                        
+                        print("[AUTO SHAKE] Clicked with " .. string.format("%.2f", shakeClickDelay) .. "s next delay, method: " .. (useGuiService and "GuiService" or "Direct"))
+                        lastShakeTime = currentTime
+                    end
+                end
+            end
+        else
+            -- Reset saat shakeui tidak ada
+            lastShakeTime = 0
+            shakeClickDelay = 0
+        end
+    end
+end)
+
 local lastCastTime = 0
 local lastRodEquipped = nil
 
@@ -360,8 +407,8 @@ LocalPlayer.CharacterAdded:Connect(onCharacterAdded)
 
 PlayerGui.ChildAdded:Connect(function(gui)
     if gui.Name == "shakeui" and autoShake then
-        task.wait(0.1) -- Brief delay untuk memastikan UI fully loaded
-        performAutoShake()
+        print("[AUTO SHAKE] ShakeUI detected! Intelligent Heartbeat monitoring activated")
+        -- Heartbeat sekarang handle autoshake, ini hanya untuk log
     elseif gui.Name == "reel" and alwaysCatch then
         print("[ALWAYS CATCH] REEL GUI DETECTED! Starting auto-completion...")
         
@@ -398,19 +445,19 @@ if CheckFunc(hookmetamethod) then
         local old; old = hookmetamethod(game, "__namecall", function(self, ...)
             local method, args = getnamecallmethod(), {...}
             
-            -- Always Catch Hook dengan Random Logic (Natural Human-like)
+            -- Always Catch Hook dengan Logic yang Benar
             if method == 'FireServer' and self.Name == 'reelfinished' and alwaysCatch then
-                -- Random completion rate: 80-95% (tidak selalu perfect)
-                local completionRate = math.random(80, 95)
+                -- args[1] = 100 SELALU (agar ikan berhasil ditangkap)
+                args[1] = 100
                 
-                -- Random success rate: 75% true, 25% false (lebih natural)
+                -- args[2] = random antara true/false untuk jenis tangkapan
+                -- true = tangkapan luar biasa, false = tangkapan normal
                 local randomChance = math.random(1, 100)
-                local catchSuccess = randomChance <= 75 -- 75% chance untuk berhasil
+                local isSpecialCatch = randomChance <= 25 -- 25% chance untuk tangkapan luar biasa
+                args[2] = isSpecialCatch
                 
-                args[1] = completionRate -- Natural completion rate
-                args[2] = catchSuccess   -- Random success/fail
-                
-                print("[ALWAYS CATCH] Hooked reelfinished - Rate: " .. args[1] .. "%, Success: " .. tostring(args[2]) .. " (" .. randomChance .. "%)")
+                local catchType = isSpecialCatch and "LUAR BIASA" or "NORMAL"
+                print("[ALWAYS CATCH] Hooked reelfinished - Rate: 100% (SUCCESS), Type: " .. catchType .. " (" .. randomChance .. "%)")
                 return old(self, unpack(args))
             end
             return old(self, ...)
@@ -431,4 +478,4 @@ print("Auto Fisch Script Loaded!")
 print("Features:")
 print("- Auto Cast Mode Legit dengan timing random 1-3 detik")
 print("- Auto Shake Mode Natural: timing 0.3-2.8s, dual method, anti-detection")
-print("- Always Catch Mode Natural: 75% success, random completion rate 80-95%")
+print("- Always Catch Mode: 100% catch success, 25% special catch")
