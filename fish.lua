@@ -144,13 +144,13 @@ end
 local function performAlwaysCatch()
     if not alwaysCatch then return end
     
-    -- Random percentage: 30% true, 70% false
-    local randomPercentage = math.random(1, 100)
-    local catchSuccess = randomPercentage <= 30 -- 30% chance untuk true
+    -- Random completion rate: 85-95% (mengikuti simple.lua yang bekerja)
+    local completionRate = math.random(85, 95)
+    local catchSuccess = true -- Selalu berhasil menangkap
     
-    -- arg1 selalu 100, arg2 random berdasarkan percentage
-    print("[ALWAYS CATCH] Firing reelfinished with success: " .. tostring(catchSuccess) .. " (" .. randomPercentage .. "%)")
-    ReplicatedStorage:WaitForChild("events"):WaitForChild("reelfinished"):FireServer(100, catchSuccess)
+    -- arg1 = completion rate (85-95%), arg2 = always true (success)
+    print("[ALWAYS CATCH] Firing reelfinished with rate: " .. completionRate .. "%, success: " .. tostring(catchSuccess))
+    ReplicatedStorage:WaitForChild("events"):WaitForChild("reelfinished"):FireServer(completionRate, catchSuccess)
     
     -- Setelah catch, tunggu delay random 1-4 detik lalu kembali ke auto cast
     if autoCast and enableLoop then
@@ -368,8 +368,40 @@ PlayerGui.ChildAdded:Connect(function(gui)
     end
 end)
 
+--// Hooks for Always Catch (mengikuti implementasi simple.lua yang bekerja)
+local function CheckFunc(func)
+    return typeof(func) == 'function'
+end
+
+if CheckFunc(hookmetamethod) then
+    print("[ALWAYS CATCH] Setting up hookmetamethod...")
+    local hookSuccess, hookError = pcall(function()
+        local old; old = hookmetamethod(game, "__namecall", function(self, ...)
+            local method, args = getnamecallmethod(), {...}
+            
+            -- Always Catch Hook (sama persis dengan simple.lua)
+            if method == 'FireServer' and self.Name == 'reelfinished' and alwaysCatch then
+                args[1] = 100  -- Perfect completion rate
+                args[2] = true -- Force caught = true
+                print("[ALWAYS CATCH] Hooked reelfinished - Rate: " .. args[1] .. ", Success: " .. tostring(args[2]))
+                return old(self, unpack(args))
+            end
+            return old(self, ...)
+        end)
+    end)
+    
+    if hookSuccess then
+        print("[ALWAYS CATCH] Hook setup successfully!")
+    else
+        warn("[ALWAYS CATCH] Failed to setup hook: " .. tostring(hookError))
+    end
+else
+    warn("[ALWAYS CATCH] hookmetamethod is not available in this executor")
+    print("[ALWAYS CATCH] Falling back to event-based system...")
+end
+
 print("Auto Fisch Script Loaded!")
 print("Features:")
 print("- Auto Cast Mode Legit dengan timing random 1-3 detik")
 print("- Auto Shake Mode Legit dengan klik random 1-3 detik")
-print("- Always Catch Mode Legit dengan 30% success rate")
+print("- Always Catch Mode dengan hookmetamethod (sama seperti simple.lua)")
