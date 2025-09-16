@@ -159,20 +159,33 @@ local function performAutoShake()
     end)
 end
 
--- Always Catch Function dengan Logic yang Benar
+-- Always Catch Function dengan Natural Success/Fail Rate
 local function performAlwaysCatch()
     if not alwaysCatch then return end
     
-    -- arg1 = 100 SELALU (agar ikan berhasil ditangkap)
-    local completionRate = 100
+    local successChance = math.random(1, 100)
+    local completionRate
+    local isSpecialCatch = false
+    local status
     
-    -- arg2 = random antara true/false untuk jenis tangkapan
-    -- true = tangkapan luar biasa, false = tangkapan normal
-    local randomChance = math.random(1, 100)
-    local isSpecialCatch = randomChance <= 25 -- 25% chance untuk tangkapan luar biasa
+    if successChance <= 85 then -- 85% chance untuk SUCCESS
+        -- SUCCESS: args[1] = 100
+        completionRate = 100
+        
+        -- Tentukan jenis tangkapan untuk success
+        local specialChance = math.random(1, 100)
+        isSpecialCatch = specialChance <= 25 -- 25% chance untuk luar biasa
+        
+        status = "SUCCESS - " .. (isSpecialCatch and "LUAR BIASA" or "NORMAL")
+    else -- 15% chance untuk FAIL
+        -- FAIL: args[1] = random 10-99 (bervariasi)
+        completionRate = math.random(10, 99)
+        isSpecialCatch = false -- Tidak ada special catch jika fail
+        
+        status = "FAIL (" .. completionRate .. "%)"
+    end
     
-    local catchType = isSpecialCatch and "LUAR BIASA" or "NORMAL"
-    print("[ALWAYS CATCH] Firing reelfinished - Rate: 100% (SUCCESS), Type: " .. catchType .. " (" .. randomChance .. "%)")
+    print("[ALWAYS CATCH] Firing reelfinished - " .. status .. " (Roll: " .. successChance .. "/100)")
     ReplicatedStorage:WaitForChild("events"):WaitForChild("reelfinished"):FireServer(completionRate, isSpecialCatch)
     
     -- Setelah catch, tunggu delay random 1-4 detik lalu kembali ke auto cast
@@ -227,10 +240,10 @@ ControlSection:NewToggle("Enable Auto Shake", "Aktifkan auto shake dengan timing
 end)
 
 -- Always Catch Toggle
-ControlSection:NewToggle("Enable Always Catch", "Aktifkan always catch dengan natural success rate", function(state)
+ControlSection:NewToggle("Enable Always Catch", "85% success rate dengan natural fail pattern", function(state)
     alwaysCatch = state
     if state then
-        print("Always Catch: ON - 75% success rate (natural)")
+        print("Always Catch: ON - 85% success, 15% natural fail")
     else
         print("Always Catch: OFF")
     end
@@ -275,12 +288,13 @@ AutoShakeInfo:NewLabel("• No predictable patterns")
 
 local AlwaysCatchInfo = InfoTab:NewSection("🎣 Always Catch Info")
 
-AlwaysCatchInfo:NewLabel("Always Catch Mode (100% Success):")
-AlwaysCatchInfo:NewLabel("• Completion rate: 100% (always catch fish)")
-AlwaysCatchInfo:NewLabel("• Special catch: 25% luar biasa, 75% normal")
+AlwaysCatchInfo:NewLabel("Always Catch Mode (Natural Rate):")
+AlwaysCatchInfo:NewLabel("• Success rate: 85% (catch fish)")
+AlwaysCatchInfo:NewLabel("• Fail rate: 15% (random 10-99% completion)")
+AlwaysCatchInfo:NewLabel("• Special catch: 25% luar biasa (on success)")
 AlwaysCatchInfo:NewLabel("• Uses hookmetamethod for reliability")
-AlwaysCatchInfo:NewLabel("• Natural catch type distribution")
-AlwaysCatchInfo:NewLabel("• Fallback to event system if needed")
+AlwaysCatchInfo:NewLabel("• Natural human-like success/fail pattern")
+AlwaysCatchInfo:NewLabel("• Variable fail completion rates")
 
 local LoopAFKInfo = InfoTab:NewSection("⚡ Loop & AFK Info")
 
@@ -445,19 +459,34 @@ if CheckFunc(hookmetamethod) then
         local old; old = hookmetamethod(game, "__namecall", function(self, ...)
             local method, args = getnamecallmethod(), {...}
             
-            -- Always Catch Hook dengan Logic yang Benar
+            -- Always Catch Hook dengan Natural Success/Fail Rate
             if method == 'FireServer' and self.Name == 'reelfinished' and alwaysCatch then
-                -- args[1] = 100 SELALU (agar ikan berhasil ditangkap)
-                args[1] = 100
+                local successChance = math.random(1, 100)
+                local completionRate
+                local isSpecialCatch = false
+                local status
                 
-                -- args[2] = random antara true/false untuk jenis tangkapan
-                -- true = tangkapan luar biasa, false = tangkapan normal
-                local randomChance = math.random(1, 100)
-                local isSpecialCatch = randomChance <= 25 -- 25% chance untuk tangkapan luar biasa
+                if successChance <= 85 then -- 85% chance untuk SUCCESS
+                    -- SUCCESS: args[1] = 100
+                    completionRate = 100
+                    
+                    -- Tentukan jenis tangkapan untuk success
+                    local specialChance = math.random(1, 100)
+                    isSpecialCatch = specialChance <= 25 -- 25% chance untuk luar biasa
+                    
+                    status = "SUCCESS - " .. (isSpecialCatch and "LUAR BIASA" or "NORMAL")
+                else -- 15% chance untuk FAIL
+                    -- FAIL: args[1] = random 10-99 (bervariasi)
+                    completionRate = math.random(10, 99)
+                    isSpecialCatch = false -- Tidak ada special catch jika fail
+                    
+                    status = "FAIL (" .. completionRate .. "%)"
+                end
+                
+                args[1] = completionRate
                 args[2] = isSpecialCatch
                 
-                local catchType = isSpecialCatch and "LUAR BIASA" or "NORMAL"
-                print("[ALWAYS CATCH] Hooked reelfinished - Rate: 100% (SUCCESS), Type: " .. catchType .. " (" .. randomChance .. "%)")
+                print("[ALWAYS CATCH] Hooked reelfinished - " .. status .. " (Roll: " .. successChance .. "/100)")
                 return old(self, unpack(args))
             end
             return old(self, ...)
@@ -478,4 +507,4 @@ print("Auto Fisch Script Loaded!")
 print("Features:")
 print("- Auto Cast Mode Legit dengan timing random 1-3 detik")
 print("- Auto Shake Mode Natural: timing 0.3-2.8s, dual method, anti-detection")
-print("- Always Catch Mode: 100% catch success, 25% special catch")
+print("- Always Catch Mode: 85% success, 15% natural fail, 25% special catch")
