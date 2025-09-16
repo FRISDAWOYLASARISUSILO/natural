@@ -122,21 +122,40 @@ local function performAutoShake()
     if not button or not button.Visible then return end
     
     isShaking = true
+    print("[AUTO SHAKE] Starting natural shake with random timing...")
     
     task.spawn(function()
         while shakeUI.Parent and button.Visible and autoShake do
-            -- Generate random timing antara 1-3 detik untuk setiap klik
-            local randomClickTiming = math.random(100, 300) / 100 -- 1.00 sampai 3.00 detik
+            -- Random timing lebih bervariasi: 0.3-2.8 detik (lebih natural seperti manusia)
+            local minDelay = math.random(30, 80) / 100  -- 0.3-0.8 detik (reaction time)
+            local maxDelay = math.random(150, 280) / 100 -- 1.5-2.8 detik (thinking time)
+            local randomClickTiming = math.random() < 0.7 and minDelay or maxDelay -- 70% cepat, 30% lambat
             
-            -- Klik button shake
-            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
-            task.wait(0.05) -- Brief delay
-            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
+            -- Random method selection untuk variasi
+            local useGuiService = math.random() < 0.6 -- 60% gunakan GuiService, 40% langsung VirtualInput
+            
+            if useGuiService then
+                -- Method 1: GuiService (seperti implementasi asli)
+                GuiService.SelectedObject = button
+                if GuiService.SelectedObject == button then
+                    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
+                    task.wait(math.random(3, 8) / 100) -- Random brief delay 0.03-0.08 detik
+                    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
+                end
+            else
+                -- Method 2: Direct VirtualInput (variasi)
+                VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
+                task.wait(math.random(4, 12) / 100) -- Random brief delay 0.04-0.12 detik
+                VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
+            end
+            
+            print("[AUTO SHAKE] Clicked with " .. string.format("%.2f", randomClickTiming) .. "s delay, method: " .. (useGuiService and "GuiService" or "Direct"))
             
             -- Wait dengan timing random sebelum klik berikutnya
             task.wait(randomClickTiming)
         end
         isShaking = false
+        print("[AUTO SHAKE] Shake session ended")
     end)
 end
 
@@ -144,12 +163,15 @@ end
 local function performAlwaysCatch()
     if not alwaysCatch then return end
     
-    -- Random completion rate: 85-95% (mengikuti simple.lua yang bekerja)
-    local completionRate = math.random(85, 95)
-    local catchSuccess = true -- Selalu berhasil menangkap
+    -- Random completion rate: 80-95% (tidak selalu perfect)
+    local completionRate = math.random(80, 95)
     
-    -- arg1 = completion rate (85-95%), arg2 = always true (success)
-    print("[ALWAYS CATCH] Firing reelfinished with rate: " .. completionRate .. "%, success: " .. tostring(catchSuccess))
+    -- Random success rate: 75% true, 25% false (lebih natural seperti manusia)
+    local randomChance = math.random(1, 100)
+    local catchSuccess = randomChance <= 75 -- 75% chance untuk berhasil
+    
+    -- arg1 = completion rate, arg2 = random success/fail
+    print("[ALWAYS CATCH] Firing reelfinished with rate: " .. completionRate .. "%, success: " .. tostring(catchSuccess) .. " (" .. randomChance .. "%)")
     ReplicatedStorage:WaitForChild("events"):WaitForChild("reelfinished"):FireServer(completionRate, catchSuccess)
     
     -- Setelah catch, tunggu delay random 1-4 detik lalu kembali ke auto cast
@@ -170,79 +192,57 @@ local function performAlwaysCatch()
 end
 
 -- Create Main Window
-local Window = Library.CreateLib("Auto Fisch", "Ocean")
+local Window = Library.CreateLib("Auto Fisch Natural", "Ocean")
 
-local AutoTab = Window:NewTab("Auto Cast")
-local AutoSection = AutoTab:NewSection("Auto Cast Settings")
+-- ===== SEMUA TOGGLE BUTTONS DI ATAS =====
+local MainTab = Window:NewTab("🎣 Main Controls")
+local ControlSection = MainTab:NewSection("⚙️ Toggle Controls")
 
-AutoSection:NewToggle("Enable Auto Cast", "Aktifkan auto cast dengan timing random 1-3 detik", function(state)
+-- Auto Cast Toggle
+ControlSection:NewToggle("Enable Auto Cast", "Aktifkan auto cast dengan timing random natural", function(state)
     autoCast = state
     if state then
-        print("Auto Cast: ON - Timing random 1-3 detik")
+        print("Auto Cast: ON - Natural timing")
     else
         print("Auto Cast: OFF")
     end
 end)
 
-AutoSection:NewSlider("Cast Delay", "Delay antar cast dalam detik", 5, 1, function(value)
+-- Cast Delay Slider
+ControlSection:NewSlider("Cast Delay", "Delay antar cast dalam detik", 5, 1, function(value)
     autoCastDelay = value
     print("Cast Delay: " .. value .. " detik")
 end)
 
-local ShakeSection = AutoTab:NewSection("Auto Shake Settings")
-
-ShakeSection:NewToggle("Enable Auto Shake", "Aktifkan auto shake dengan klik random 1-3 detik", function(state)
+-- Auto Shake Toggle  
+ControlSection:NewToggle("Enable Auto Shake", "Aktifkan auto shake dengan timing anti-detection", function(state)
     autoShake = state
     if state then
-        print("Auto Shake: ON - Klik random 1-3 detik")
+        print("Auto Shake: ON - Anti-detection mode")
     else
         print("Auto Shake: OFF")
         isShaking = false
     end
 end)
 
-local CatchSection = AutoTab:NewSection("Always Catch Settings")
-
-CatchSection:NewToggle("Enable Always Catch", "Aktifkan always catch dengan random success rate", function(state)
+-- Always Catch Toggle
+ControlSection:NewToggle("Enable Always Catch", "Aktifkan always catch dengan natural success rate", function(state)
     alwaysCatch = state
     if state then
-        print("Always Catch: ON - 30% success, 70% fail (natural)")
+        print("Always Catch: ON - 75% success rate (natural)")
     else
         print("Always Catch: OFF")
     end
 end)
 
-local InfoSection = AutoTab:NewSection("Informasi")
-AutoSection:NewLabel("Auto Cast Mode Legit:")
-AutoSection:NewLabel("- Timing hold: 1-3 detik (random)")
-AutoSection:NewLabel("- Safe & Natural casting simulation")
-AutoSection:NewLabel("")
-AutoSection:NewLabel("Auto Shake Mode Legit:")
-AutoSection:NewLabel("- Timing klik: 1-3 detik (random)")
-AutoSection:NewLabel("- Otomatis klik button shake")
-AutoSection:NewLabel("")
-AutoSection:NewLabel("Always Catch Mode Legit:")
-AutoSection:NewLabel("- 30% success rate (true)")
-AutoSection:NewLabel("- 70% fail rate (false)")
-AutoSection:NewLabel("- Natural fishing simulation")
-
-local LoopTab = Window:NewTab("Loop Settings")
-local LoopSection = LoopTab:NewSection("🔄 Loop Settings")
-
-local LoopToggle = LoopSection:NewToggle("Enable Loop", "Automatically repeat fishing cycle", function(state)
+-- Loop Toggle
+ControlSection:NewToggle("Enable Loop", "Otomatis repeat fishing cycle", function(state)
     enableLoop = state
     print("Loop mode: " .. (enableLoop and "Enabled" or "Disabled"))
 end)
 
-LoopSection:NewLabel("Loop Settings:")
-LoopSection:NewLabel("- Auto repeats: Cast → Shake → Catch")
-LoopSection:NewLabel("- Random delay: 1-4 seconds")
-LoopSection:NewLabel("- Natural fishing simulation")
-
-local AFKTab = Window:NewTab("AFK Mode")
-local AFKSection = AFKTab:NewSection("😴 AFK Mode")
-
-local AFKToggle = AFKSection:NewToggle("Enable AFK Mode", "Simulate realistic breaks", function(state)
+-- AFK Toggle
+ControlSection:NewToggle("Enable AFK Mode", "Simulasi break realistis", function(state)
     enableAFK = state
     if state then
         initializeAFK()
@@ -253,30 +253,49 @@ local AFKToggle = AFKSection:NewToggle("Enable AFK Mode", "Simulate realistic br
     end
 end)
 
-AFKSection:NewLabel("AFK Mode Settings:")
-AFKSection:NewLabel("- Active time: 5-10 minutes")
-AFKSection:NewLabel("- Break time: 1-3 minutes")
-AFKSection:NewLabel("- Realistic player simulation")
+-- ===== SEMUA INFORMASI DI BAWAH =====
+local InfoTab = Window:NewTab("📊 Information")
+local AutoCastInfo = InfoTab:NewSection("🎯 Auto Cast Info")
 
--- Auto Shake dengan Heartbeat (mengikuti implementasi coba.lua yang bekerja)
-RunService.Heartbeat:Connect(function()
-    if autoShake then
-        local shakeui = FindChild(PlayerGui, "shakeui")
-        if shakeui then
-            local safezone = FindChild(shakeui, "safezone")
-            if safezone then
-                local button = FindChild(safezone, "button")
-                if button then
-                    GuiService.SelectedObject = button
-                    if GuiService.SelectedObject == button then
-                        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
-                        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
-                    end
-                end
-            end
-        end
-    end
-end)
+AutoCastInfo:NewLabel("Auto Cast Mode Natural:")
+AutoCastInfo:NewLabel("• Timing hold: 1-3 detik (random)")
+AutoCastInfo:NewLabel("• Safe & Natural casting simulation")
+AutoCastInfo:NewLabel("• Automatic rod detection")
+AutoCastInfo:NewLabel("• Configurable delay between casts")
+
+local AutoShakeInfo = InfoTab:NewSection("🔄 Auto Shake Info")
+
+AutoShakeInfo:NewLabel("Auto Shake Mode Anti-Detection:")
+AutoShakeInfo:NewLabel("• Timing: 0.3-2.8 detik (sangat random)")
+AutoShakeInfo:NewLabel("• 70% cepat, 30% lambat (human-like)")
+AutoShakeInfo:NewLabel("• Dual method: GuiService/Direct")
+AutoShakeInfo:NewLabel("• Random key hold: 0.03-0.12 detik")
+AutoShakeInfo:NewLabel("• No predictable patterns")
+
+local AlwaysCatchInfo = InfoTab:NewSection("🎣 Always Catch Info")
+
+AlwaysCatchInfo:NewLabel("Always Catch Mode Natural:")
+AlwaysCatchInfo:NewLabel("• Success rate: 75% true, 25% false")
+AlwaysCatchInfo:NewLabel("• Completion rate: 80-95% (random)")
+AlwaysCatchInfo:NewLabel("• Uses hookmetamethod for reliability")
+AlwaysCatchInfo:NewLabel("• Human-like fishing simulation")
+AlwaysCatchInfo:NewLabel("• Fallback to event system if needed")
+
+local LoopAFKInfo = InfoTab:NewSection("⚡ Loop & AFK Info")
+
+LoopAFKInfo:NewLabel("Loop Mode:")
+LoopAFKInfo:NewLabel("• Auto repeats: Cast → Shake → Catch")
+LoopAFKInfo:NewLabel("• Random delay: 1-4 seconds")
+LoopAFKInfo:NewLabel("• Seamless fishing automation")
+
+LoopAFKInfo:NewLabel("")
+LoopAFKInfo:NewLabel("AFK Mode:")
+LoopAFKInfo:NewLabel("• Active time: 5-10 minutes")
+LoopAFKInfo:NewLabel("• Break time: 1-3 minutes")
+LoopAFKInfo:NewLabel("• Realistic player simulation")
+
+-- Auto Shake sudah dihandle oleh performAutoShake() function
+-- Heartbeat implementation dihapus untuk menghindari spam clicking
 local lastCastTime = 0
 local lastRodEquipped = nil
 
@@ -379,11 +398,19 @@ if CheckFunc(hookmetamethod) then
         local old; old = hookmetamethod(game, "__namecall", function(self, ...)
             local method, args = getnamecallmethod(), {...}
             
-            -- Always Catch Hook (sama persis dengan simple.lua)
+            -- Always Catch Hook dengan Random Logic (Natural Human-like)
             if method == 'FireServer' and self.Name == 'reelfinished' and alwaysCatch then
-                args[1] = 100  -- Perfect completion rate
-                args[2] = true -- Force caught = true
-                print("[ALWAYS CATCH] Hooked reelfinished - Rate: " .. args[1] .. ", Success: " .. tostring(args[2]))
+                -- Random completion rate: 80-95% (tidak selalu perfect)
+                local completionRate = math.random(80, 95)
+                
+                -- Random success rate: 75% true, 25% false (lebih natural)
+                local randomChance = math.random(1, 100)
+                local catchSuccess = randomChance <= 75 -- 75% chance untuk berhasil
+                
+                args[1] = completionRate -- Natural completion rate
+                args[2] = catchSuccess   -- Random success/fail
+                
+                print("[ALWAYS CATCH] Hooked reelfinished - Rate: " .. args[1] .. "%, Success: " .. tostring(args[2]) .. " (" .. randomChance .. "%)")
                 return old(self, unpack(args))
             end
             return old(self, ...)
@@ -403,5 +430,5 @@ end
 print("Auto Fisch Script Loaded!")
 print("Features:")
 print("- Auto Cast Mode Legit dengan timing random 1-3 detik")
-print("- Auto Shake Mode Legit dengan klik random 1-3 detik")
-print("- Always Catch Mode dengan hookmetamethod (sama seperti simple.lua)")
+print("- Auto Shake Mode Natural: timing 0.3-2.8s, dual method, anti-detection")
+print("- Always Catch Mode Natural: 75% success, random completion rate 80-95%")
