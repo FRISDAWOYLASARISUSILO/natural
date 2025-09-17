@@ -392,10 +392,16 @@ end)
 local function onCharacterChildAdded(child)
     if child:IsA("Tool") and child:FindFirstChild("events") and child.events:FindFirstChild("cast") and autoCast then
         task.wait(autoCastDelay)
-        task.spawn(function()
-            performAutoCast()
-        end)
-        lastCastTime = tick()
+        -- Check lure value before casting (fix for bobber water detection)
+        if child.values and child.values:FindFirstChild("lure") then
+            local lureValue = child.values.lure.Value
+            if lureValue <= 0.001 then -- Only cast if lure is not in water
+                task.spawn(function()
+                    performAutoCast()
+                end)
+                lastCastTime = tick()
+            end
+        end
     end
 end
 
