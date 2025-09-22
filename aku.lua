@@ -302,6 +302,7 @@ local TeleportLocations = {
         ['Atlantis'] = CFrame.new(2015, -645, 2460),
     ['Snowburk'] = CFrame.new(2865, 141, 2557),
     ['Acavern'] = CFrame.new(-1004, -336.1, -4076.6),
+         ['Acavern2'] = CFrame.new(-1131.5, -365.5, -4890.4),
     ['Snowburk 1'] = CFrame.new(2800 , 280 , 2565)
     },
     ['Rods'] = {
